@@ -1,11 +1,12 @@
 import { staticFile } from "remotion";
 import { getVideoMetadata, VideoMetadata } from "@remotion/media-utils";
+import { llm } from "cosine-api";
 import { ThreeCanvas, useVideoTexture } from "@remotion/three";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AbsoluteFill, useVideoConfig, Video } from "remotion";
-import { Phone } from "./Phone";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
+import { Phone } from "./Phone";
 
 const container: React.CSSProperties = {
   backgroundColor: "white",
@@ -32,14 +33,41 @@ export const Scene: React.FC<
   const { width, height } = useVideoConfig();
   const [videoData, setVideoData] = useState<VideoMetadata | null>(null);
 
+  const initialPrompt = useMemo(() => {
+    return `Give a brief description of what the phoneColor is ${phoneColor} and the type of device is ${deviceType} and the total amount of frames is ${width * height} and the aspect ratio of the video is: ${
+      (width * height) / width
+    } and the video is about the creation of a phone.`;
+  }, [height, phoneColor, deviceType, width]);
+
+  const [refinedPrompt, setRefinedPrompt] = useState("");
+
   const videoSrc =
-    deviceType === "phone" ? staticFile("phone.mp4") : staticFile("tablet.mp4");
+    refinedPrompt === "phone"
+      ? staticFile("phone.mp4")
+      : staticFile("tablet.mp4");
+
+  const baseUrl = "http://localhost:3000";
+  const API_KEY = "abc";
+
+  useEffect(() => {
+    const helper = async () => {
+      const find_refined_prompt = await llm(
+        baseUrl,
+        API_KEY,
+        initialPrompt,
+        "gpt-3.5-turbo",
+      );
+      setRefinedPrompt(find_refined_prompt);
+    };
+
+    helper();
+  }, [initialPrompt]);
 
   useEffect(() => {
     getVideoMetadata(videoSrc)
       .then((data) => setVideoData(data))
       .catch((err) => console.log(err));
-  }, [videoSrc]);
+  }, [refinedPrompt, videoSrc]);
 
   const texture = useVideoTexture(videoRef);
   return (
