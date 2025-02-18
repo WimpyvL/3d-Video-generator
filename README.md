@@ -16,6 +16,26 @@ This example features a phone with a screen. You can easily switch out the video
 
 You can also simply delete everything inside the canvas to start off with your own 3D project.
 
+## Project Structure
+
+Inside your Remotion project, you'll see the following folders and files:
+
+```
+📦 src
+┣ 📂 Helpers
+┣ 📜 index.ts
+┣ 📜 Phone.tsx
+┣ 📜 Root.tsx
+┣ 📜 Scene.tsx
+📜 package.json
+```
+
+The most important files inside `src/` are:
+
+- `Root.tsx`: This file contains the Compositions that you want to render.
+- `index.ts`: This file registers the Root for the Renderfarm. You don't usually need to make changes to this file.
+- Everything else in `src/` is up to you to create.
+
 ## Commands
 
 **Install Dependencies**

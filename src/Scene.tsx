@@ -1,11 +1,12 @@
 import { staticFile } from "remotion";
 import { getVideoMetadata, VideoMetadata } from "@remotion/media-utils";
+import { llm } from "cosine-api";
 import { ThreeCanvas, useVideoTexture } from "@remotion/three";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AbsoluteFill, useVideoConfig, Video } from "remotion";
-import { Phone } from "./Phone";
 import { z } from "zod";
 import { zColor } from "@remotion/zod-types";
+import { Phone } from "./Phone";
 
 const container: React.CSSProperties = {
   backgroundColor: "white",
@@ -31,9 +32,36 @@ export const Scene: React.FC<
   const videoRef = useRef<HTMLVideoElement>(null);
   const { width, height } = useVideoConfig();
   const [videoData, setVideoData] = useState<VideoMetadata | null>(null);
+  const [initialPrompt, setInitialPrompt] = useState<string>("");
+
+  const refinedPrompt = useMemo(() => {
+    return `Give a brief description of what the phoneColor is ${phoneColor} and the type of device is ${deviceType} and the total amount of frames is ${width * height} and the aspect ratio of the video is: ${
+      (width * height) / width
+    } and the video is about the creation of a phone.`;
+  }, [initialPrompt, deviceType, phoneColor, width, height]);
 
   const videoSrc =
-    deviceType === "phone" ? staticFile("phone.mp4") : staticFile("tablet.mp4");
+    refinedPrompt === "phone"
+      ? staticFile("phone.mp4")
+      : staticFile("tablet.mp4");
+
+  const baseUrl = "http://localhost:3000";
+  const API_KEY = "abc";
+
+  useEffect(() => {
+    const helper = async () => {
+      const find_refined_prompt = await llm(
+        baseUrl,
+        API_KEY,
+        initialPrompt,
+        "gpt-3.5-turbo",
+      );
+      console.log({ initialPrompt });
+      console.log({ find_refined_prompt });
+    };
+
+    helper();
+  }, [initialPrompt]);
 
   useEffect(() => {
     getVideoMetadata(videoSrc)
@@ -44,6 +72,14 @@ export const Scene: React.FC<
   const texture = useVideoTexture(videoRef);
   return (
     <AbsoluteFill style={container}>
+      <input
+        value={initialPrompt}
+        onChange={(e) => setInitialPrompt(e.target.value)}
+        placeholder="Enter your user prompt"
+      />
+      <div>{initialPrompt}</div>
+      <div>{refinedPrompt}</div>
+
       <Video ref={videoRef} src={videoSrc} style={videoStyle} />
       {videoData ? (
         <ThreeCanvas linear width={width} height={height}>
