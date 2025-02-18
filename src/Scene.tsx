@@ -32,14 +32,13 @@ export const Scene: React.FC<
   const videoRef = useRef<HTMLVideoElement>(null);
   const { width, height } = useVideoConfig();
   const [videoData, setVideoData] = useState<VideoMetadata | null>(null);
+  const [initialPrompt, setInitialPrompt] = useState<string>("");
 
-  const initialPrompt = useMemo(() => {
+  const refinedPrompt = useMemo(() => {
     return `Give a brief description of what the phoneColor is ${phoneColor} and the type of device is ${deviceType} and the total amount of frames is ${width * height} and the aspect ratio of the video is: ${
       (width * height) / width
     } and the video is about the creation of a phone.`;
-  }, [height, phoneColor, deviceType, width]);
-
-  const [refinedPrompt, setRefinedPrompt] = useState("");
+  }, [initialPrompt, deviceType, phoneColor, width, height]);
 
   const videoSrc =
     refinedPrompt === "phone"
@@ -57,7 +56,8 @@ export const Scene: React.FC<
         initialPrompt,
         "gpt-3.5-turbo",
       );
-      setRefinedPrompt(find_refined_prompt);
+      console.log({ initialPrompt });
+      console.log({ find_refined_prompt });
     };
 
     helper();
@@ -67,11 +67,19 @@ export const Scene: React.FC<
     getVideoMetadata(videoSrc)
       .then((data) => setVideoData(data))
       .catch((err) => console.log(err));
-  }, [refinedPrompt, videoSrc]);
+  }, [videoSrc]);
 
   const texture = useVideoTexture(videoRef);
   return (
     <AbsoluteFill style={container}>
+      <input
+        value={initialPrompt}
+        onChange={(e) => setInitialPrompt(e.target.value)}
+        placeholder="Enter your user prompt"
+      />
+      <div>{initialPrompt}</div>
+      <div>{refinedPrompt}</div>
+
       <Video ref={videoRef} src={videoSrc} style={videoStyle} />
       {videoData ? (
         <ThreeCanvas linear width={width} height={height}>
